@@ -6,9 +6,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 class OrderCreatedConsumerTest {
 
@@ -23,10 +23,21 @@ class OrderCreatedConsumerTest {
     }
 
     @Test
-    void listen() {
+    void listen_success() throws ExecutionException, InterruptedException {
         OrderCreated orderToSend = OrderCreated.builder()
                 .uuid(UUID.randomUUID()).message(UUID.randomUUID().toString())
                 .build();
+
+        orderCreatedConsumer.listen(orderToSend);
+        verify(dispatcherServMock).process(orderToSend);
+    }
+    @Test
+    void listen_ServiceThrowsException() throws ExecutionException, InterruptedException {
+        OrderCreated orderToSend = OrderCreated.builder()
+                .uuid(UUID.randomUUID()).message(UUID.randomUUID().toString())
+                .build();
+
+        doThrow(new RuntimeException("Service failure")).when(dispatcherServMock).process(orderToSend);
 
         orderCreatedConsumer.listen(orderToSend);
         verify(dispatcherServMock).process(orderToSend);
