@@ -22,6 +22,12 @@ public class OrderCreatedConsumer {
 
     ) public void listen(OrderCreated payload) {
         log.info("Received message - payload: {}",payload);
-        dispatcherService.process(payload);
+
+        try {
+            dispatcherService.process(payload);
+        } catch(Exception e) {
+            log.error("Processing failure",e);
+        }
+
     }
 }
