@@ -1,6 +1,6 @@
 package dev.lydtech.dispatch.config;
 
-import dev.lydtech.dispatch.handler.OrderCreatedConsumer;
+import dev.lydtech.dispatch.message.OrderCreated;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,7 +34,7 @@ public class DispatchConfig {
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         config.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
-        config.put(JsonDeserializer.VALUE_DEFAULT_TYPE, OrderCreatedConsumer.class);
+        config.put(JsonDeserializer.VALUE_DEFAULT_TYPE, OrderCreated.class);
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         return new DefaultKafkaConsumerFactory<>(config);
     }
