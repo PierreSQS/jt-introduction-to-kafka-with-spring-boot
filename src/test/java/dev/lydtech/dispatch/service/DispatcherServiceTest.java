@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.kafka.core.KafkaTemplate;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,7 +27,7 @@ class DispatcherServiceTest {
 
     @BeforeEach
     void setUp() {
-        kafkaProducerMock = mock();
+        kafkaProducerMock = mock(KafkaTemplate.class);
         dispatcherService = new DispatcherService(kafkaProducerMock);
 
         orderCreatedTestEvent =
@@ -39,7 +40,7 @@ class DispatcherServiceTest {
                 .willReturn(mock()); // note the mock-method without class arg!!!!
 
         when(kafkaProducerMock.send(anyString(), any(OrderDispatched.class)))
-                .thenReturn(mock());
+                .thenReturn(mock(CompletableFuture.class));
 
         dispatcherService.process(orderCreatedTestEvent);
 
@@ -49,7 +50,7 @@ class DispatcherServiceTest {
     @Test
     void process_OrderServiceThrowsException() {
         when(kafkaProducerMock.send(eq(DispatcherService.DISPATCH_TRACKING_TOPIC),any(DispatchPreparing.class)))
-                .thenReturn(mock());
+                .thenReturn(mock(CompletableFuture.class));
 
         doThrow(new RuntimeException("Producer failure"))
                 .when(kafkaProducerMock).send(eq(DispatcherService.ORDER_DISPATCHER_TOPIC),any(OrderDispatched.class));
@@ -66,7 +67,7 @@ class DispatcherServiceTest {
     @Test
     void process_TrackingServiceThrowsException() {
         given(kafkaProducerMock.send(eq(DispatcherService.ORDER_DISPATCHER_TOPIC),any(OrderDispatched.class)))
-                .willReturn(mock());
+                .willReturn(mock(CompletableFuture.class));
 
 
         doThrow(new RuntimeException("Producer failure"))
