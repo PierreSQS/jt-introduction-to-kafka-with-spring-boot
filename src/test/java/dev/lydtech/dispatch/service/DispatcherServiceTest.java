@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.kafka.core.KafkaTemplate;
 
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,7 +26,7 @@ class DispatcherServiceTest {
 
     @BeforeEach
     void setUp() {
-        kafkaProducerMock = mock(KafkaTemplate.class);
+        kafkaProducerMock = mock();
         dispatcherService = new DispatcherService(kafkaProducerMock);
 
         orderCreatedTestEvent =
@@ -40,7 +39,7 @@ class DispatcherServiceTest {
                 .willReturn(mock()); // note the mock-method without class arg!!!!
 
         when(kafkaProducerMock.send(anyString(), any(OrderDispatched.class)))
-                .thenReturn(mock(CompletableFuture.class));
+                .thenReturn(mock());
 
         dispatcherService.process(orderCreatedTestEvent);
 
