@@ -45,13 +45,12 @@ class DispatcherServiceTest {
         dispatcherService.process(orderCreatedTestEvent);
 
         verify(kafkaProducerMock).send(eq(DispatcherService.ORDER_DISPATCHER_TOPIC), any(OrderDispatched.class));
+
+        verify(kafkaProducerMock).send(eq(DispatcherService.DISPATCH_TRACKING_TOPIC), any(DispatchPreparing.class));
     }
 
     @Test
-    void process_OrderServiceThrowsException() {
-        when(kafkaProducerMock.send(eq(DispatcherService.DISPATCH_TRACKING_TOPIC),any(DispatchPreparing.class)))
-                .thenReturn(mock(CompletableFuture.class));
-
+    void process_OrderProducerThrowsException() {
         doThrow(new RuntimeException("Producer failure"))
                 .when(kafkaProducerMock).send(eq(DispatcherService.ORDER_DISPATCHER_TOPIC),any(OrderDispatched.class));
 
@@ -60,15 +59,14 @@ class DispatcherServiceTest {
 
         verify(kafkaProducerMock).send(eq(DispatcherService.ORDER_DISPATCHER_TOPIC),any(OrderDispatched.class));
 
+        verifyNoMoreInteractions(kafkaProducerMock);
+
         // Extra AssertJ assertion to practise
         assertThat(exception.getMessage()).isEqualTo("Producer failure");
     }
 
     @Test
-    void process_TrackingServiceThrowsException() {
-        given(kafkaProducerMock.send(eq(DispatcherService.ORDER_DISPATCHER_TOPIC),any(OrderDispatched.class)))
-                .willReturn(mock(CompletableFuture.class));
-
+    void process_TrackingProducerThrowsException() {
 
         doThrow(new RuntimeException("Producer failure"))
                 .when(kafkaProducerMock).send(eq(DispatcherService.DISPATCH_TRACKING_TOPIC),any(DispatchPreparing.class));
@@ -76,7 +74,9 @@ class DispatcherServiceTest {
         Exception exception = assertThrows(RuntimeException.class,
                 () -> dispatcherService.process(orderCreatedTestEvent));
 
-        verify(kafkaProducerMock).send(eq(DispatcherService.DISPATCH_TRACKING_TOPIC),any(DispatchPreparing.class));
+        verify(kafkaProducerMock).send(eq(DispatcherService.ORDER_DISPATCHER_TOPIC),any(OrderDispatched.class));
+
+        verifyNoMoreInteractions(kafkaProducerMock);
 
         // Extra AssertJ assertion to practise
         assertThat(exception.getMessage()).isEqualTo("Producer failure");
