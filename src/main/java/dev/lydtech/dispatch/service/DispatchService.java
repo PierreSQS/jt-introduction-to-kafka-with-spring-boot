@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutionException;
 
 @Service
 @RequiredArgsConstructor
-public class DispatcherService {
+public class DispatchService {
     public static final String ORDER_DISPATCHER_TOPIC = "order.dispatched";
 
     public static final String DISPATCH_TRACKING_TOPIC = "dispatch.tracking";

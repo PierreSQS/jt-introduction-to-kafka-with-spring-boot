@@ -1,7 +1,7 @@
 package dev.lydtech.dispatch.handler;
 
 import dev.lydtech.dispatch.message.OrderCreated;
-import dev.lydtech.dispatch.service.DispatcherService;
+import dev.lydtech.dispatch.service.DispatchService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -14,11 +14,11 @@ class OrderCreatedConsumerTest {
 
     OrderCreatedConsumer orderCreatedConsumer;
 
-    DispatcherService dispatcherServMock;
+    DispatchService dispatcherServMock;
 
     @BeforeEach
     void setUp() {
-        dispatcherServMock = mock(DispatcherService.class);
+        dispatcherServMock = mock(DispatchService.class);
         orderCreatedConsumer = new OrderCreatedConsumer(dispatcherServMock);
     }
 
