@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -36,6 +38,18 @@ class OrderDispatchIntegrationTest {
 
     @Autowired
     private KafkaListenerEndpointRegistry registry;
+
+    @Autowired
+    private KafkaTestListener testListener;
+
+    @Configuration
+    static class TestConfig {
+        @Bean
+        public KafkaTestListener kafkaTestListener() {
+            return new KafkaTestListener();
+        }
+    }
+
 
     /**
      * Use this receiver to consume messages from the outbound topics.
