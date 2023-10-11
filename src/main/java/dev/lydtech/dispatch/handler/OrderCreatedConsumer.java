@@ -27,6 +27,9 @@ public class OrderCreatedConsumer {
             dispatchService.process(payload);
         } catch(Exception e) {
             log.error("Processing failure",e);
+
+            /* Clean up whatever needs to be handled before interrupting  */
+            Thread.currentThread().interrupt();
         }
 
     }
