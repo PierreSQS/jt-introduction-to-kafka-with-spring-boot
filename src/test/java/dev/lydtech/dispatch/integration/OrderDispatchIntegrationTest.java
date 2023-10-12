@@ -53,6 +53,8 @@ class OrderDispatchIntegrationTest {
     @Autowired
     private KafkaTestListener testListener;
 
+    String messageKey;
+
     @Configuration
     static class TestConfig {
         @Bean
@@ -89,7 +91,10 @@ class OrderDispatchIntegrationTest {
 
         // Wait until the partitions are assigned.
         registry.getListenerContainers().forEach(messageListenerContainer ->
-                ContainerTestUtils.waitForAssignment(messageListenerContainer, embeddedKafkaBroker.getPartitionsPerTopic()));
+                ContainerTestUtils.waitForAssignment(messageListenerContainer,
+                        embeddedKafkaBroker.getPartitionsPerTopic()));
+
+        messageKey = UUID.randomUUID().toString();
     }
 
     /**
@@ -97,8 +102,9 @@ class OrderDispatchIntegrationTest {
      */
     @Test
     void testOrderDispatchFlow() throws Exception {
+
         OrderCreated orderCreated = TestEventData.buildOrderCreatedEvent(UUID.randomUUID(),"test-item");
-        send(ORDER_CREATED_TOPIC,orderCreated);
+        send(ORDER_CREATED_TOPIC,messageKey,orderCreated);
 
         await().atMost(3, TimeUnit.SECONDS).pollDelay(100,TimeUnit.MILLISECONDS)
                 .until(testListener.dispatchPreparingCounter::get, equalTo(1));
@@ -107,10 +113,11 @@ class OrderDispatchIntegrationTest {
                 .until(testListener.dispatchPreparingCounter::get,equalTo(1));
     }
 
-    private void send(String topic, Object data) throws Exception{
+    private void send(String topic, String messageKey, Object data) throws Exception{
         kafkaTemplate.send(MessageBuilder
                 .withPayload(data)
                 .setHeader(KafkaHeaders.TOPIC,topic)
+                .setHeader(KafkaHeaders.RECEIVED_KEY,messageKey)
                 .build()).get();
     }
 }

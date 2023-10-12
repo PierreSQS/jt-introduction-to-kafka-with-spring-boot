@@ -16,30 +16,33 @@ class OrderCreatedConsumerTest {
 
     DispatchService dispatcherServMock;
 
+    String messageKey;
+
+    OrderCreated orderToSend;
+
     @BeforeEach
     void setUp() {
         dispatcherServMock = mock(DispatchService.class);
         orderCreatedConsumer = new OrderCreatedConsumer(dispatcherServMock);
+
+        messageKey = UUID.randomUUID().toString();
+
+        orderToSend = OrderCreated.builder()
+                .uuid(UUID.randomUUID()).message(UUID.randomUUID().toString())
+                .build();
+
     }
 
     @Test
     void listen_success() throws ExecutionException, InterruptedException {
-        OrderCreated orderToSend = OrderCreated.builder()
-                .uuid(UUID.randomUUID()).message(UUID.randomUUID().toString())
-                .build();
-
-        orderCreatedConsumer.listen(orderToSend);
-        verify(dispatcherServMock).process(orderToSend);
+        orderCreatedConsumer.listen(0,messageKey,orderToSend);
+        verify(dispatcherServMock).process(messageKey,orderToSend);
     }
     @Test
     void listen_ServiceThrowsException() throws ExecutionException, InterruptedException {
-        OrderCreated orderToSend = OrderCreated.builder()
-                .uuid(UUID.randomUUID()).message(UUID.randomUUID().toString())
-                .build();
+        doThrow(new RuntimeException("Service failure")).when(dispatcherServMock).process(messageKey,orderToSend);
 
-        doThrow(new RuntimeException("Service failure")).when(dispatcherServMock).process(orderToSend);
-
-        orderCreatedConsumer.listen(orderToSend);
-        verify(dispatcherServMock).process(orderToSend);
+        orderCreatedConsumer.listen(0,messageKey,orderToSend);
+        verify(dispatcherServMock).process(messageKey,orderToSend);
     }
 }

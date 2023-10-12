@@ -23,7 +23,8 @@ public class DispatchService {
 
     private final KafkaTemplate<String,Object> kafkaTemplate;
 
-    public void process(OrderCreated orderCreated) throws ExecutionException, InterruptedException {
+    public void process(String key, OrderCreated orderCreated)
+            throws ExecutionException, InterruptedException {
         OrderDispatched orderDispatched = OrderDispatched.builder()
                 .uuid(orderCreated.getUuid())
                 .processedBy(APPLICATION_ID)
@@ -34,10 +35,10 @@ public class DispatchService {
                 .orderId(orderCreated.getUuid())
                 .build();
 
-        kafkaTemplate.send(ORDER_DISPATCHER_TOPIC,orderDispatched).get();
+        kafkaTemplate.send(ORDER_DISPATCHER_TOPIC,key,orderDispatched).get();
 
-        kafkaTemplate.send(DISPATCH_TRACKING_TOPIC,dispatchPreparing).get();
+        kafkaTemplate.send(DISPATCH_TRACKING_TOPIC,key, dispatchPreparing).get();
 
-        log.info("Sent message orderId {} - processed by {}",orderCreated.getUuid(), APPLICATION_ID);
+        log.info("Sent message key={} -orderId={} - processed by={}",key, orderCreated.getUuid(), APPLICATION_ID);
     }
 }
