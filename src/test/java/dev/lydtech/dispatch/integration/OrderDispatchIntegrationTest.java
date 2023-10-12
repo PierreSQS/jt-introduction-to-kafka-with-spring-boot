@@ -117,7 +117,7 @@ class OrderDispatchIntegrationTest {
         kafkaTemplate.send(MessageBuilder
                 .withPayload(data)
                 .setHeader(KafkaHeaders.TOPIC,topic)
-                .setHeader(KafkaHeaders.RECEIVED_KEY,messageKey)
+                .setHeader(KafkaHeaders.KEY,messageKey)
                 .build()).get();
     }
 }
