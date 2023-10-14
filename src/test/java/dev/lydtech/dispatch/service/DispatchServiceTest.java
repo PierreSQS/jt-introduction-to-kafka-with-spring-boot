@@ -108,9 +108,9 @@ class DispatchServiceTest {
                 .withMessage(PRODUCER_FAILURE);
 
         verify(kafkaProducerMock).send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), eq(messageKey),
-                any(OrderDispatched.class));
+                any(DispatchPreparing.class));
 
         verify(kafkaProducerMock).send(eq(DispatchService.ORDER_DISPATCHER_TOPIC),eq(messageKey),
-                any(DispatchPreparing.class));
+                any(OrderDispatched.class));
     }
 }
