@@ -100,7 +100,7 @@ class DispatchServiceTest {
         given(kafkaProducerMock.send(eq(DispatchService.DISPATCH_TRACKING_TOPIC),
                 eq(messageKey), any(DispatchPreparing.class))).willReturn(mock());
 
-        doThrow(new RuntimeException()).when(kafkaProducerMock).send(eq(DispatchService.DISPATCH_TRACKING_TOPIC),
+        doThrow(new RuntimeException(PRODUCER_FAILURE)).when(kafkaProducerMock).send(eq(DispatchService.DISPATCH_TRACKING_TOPIC),
                 eq(messageKey),any(DispatchCompleted.class));
 
         assertThatExceptionOfType(RuntimeException.class)
@@ -110,6 +110,7 @@ class DispatchServiceTest {
         verify(kafkaProducerMock).send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), eq(messageKey),
                 any(OrderDispatched.class));
 
-        verify(kafkaProducerMock).send(eq(DispatchService.ORDER_DISPATCHER_TOPIC),eq(messageKey), any(DispatchPreparing.class));
+        verify(kafkaProducerMock).send(eq(DispatchService.ORDER_DISPATCHER_TOPIC),eq(messageKey),
+                any(DispatchPreparing.class));
     }
 }
