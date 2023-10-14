@@ -90,6 +90,8 @@ class DispatchServiceTest {
 
         verify(kafkaProducerMock).send(eq(DispatchService.DISPATCH_TRACKING_TOPIC),anyString(), any(DispatchPreparing.class));
 
+        verifyNoMoreInteractions(kafkaProducerMock);
+
     }
 
     @Test
@@ -112,5 +114,8 @@ class DispatchServiceTest {
 
         verify(kafkaProducerMock).send(eq(DispatchService.ORDER_DISPATCHER_TOPIC),eq(messageKey),
                 any(OrderDispatched.class));
+
+        verify(kafkaProducerMock).send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), eq(messageKey),
+                any(DispatchCompleted.class));
     }
 }
