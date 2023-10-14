@@ -1,5 +1,6 @@
 package dev.lydtech.dispatch.service;
 
+import dev.lydtech.dispatch.message.DispatchCompleted;
 import dev.lydtech.dispatch.message.DispatchPreparing;
 import dev.lydtech.dispatch.message.OrderCreated;
 import dev.lydtech.dispatch.message.OrderDispatched;
@@ -41,7 +42,10 @@ class DispatchServiceTest {
     @Test
     void process_Success() throws ExecutionException, InterruptedException {
         given(kafkaProducerMock.send(anyString(), anyString(), any(DispatchPreparing.class)))
-                .willReturn(mock()); // note the mock-method without class arg!!!!
+                .willReturn(mock());
+
+        given(kafkaProducerMock.send(anyString(), anyString(), any(DispatchCompleted.class)))
+                .willReturn(mock());
 
         when(kafkaProducerMock.send(anyString(), anyString(), any(OrderDispatched.class)))
                 .thenReturn(mock());
@@ -70,7 +74,7 @@ class DispatchServiceTest {
     }
 
     @Test
-    void process_TrackingProducerThrowsException() {
+    void process_TrackingProducerThrowsExceptionWhenSendingDispatchPreparingEvent() {
 
         given(kafkaProducerMock.send(eq(DispatchService.ORDER_DISPATCHER_TOPIC),anyString(), any(OrderDispatched.class)))
                 .willReturn(mock());
@@ -86,5 +90,26 @@ class DispatchServiceTest {
 
         verify(kafkaProducerMock).send(eq(DispatchService.DISPATCH_TRACKING_TOPIC),anyString(), any(DispatchPreparing.class));
 
+    }
+
+    @Test
+    void process_TrackingProducerThrowsExceptionWhenSendingDispatchCompletedEvent() {
+        given(kafkaProducerMock.send(eq(DispatchService.ORDER_DISPATCHER_TOPIC),
+                eq(messageKey), any(OrderDispatched.class))).willReturn(mock());
+
+        given(kafkaProducerMock.send(eq(DispatchService.DISPATCH_TRACKING_TOPIC),
+                eq(messageKey), any(DispatchPreparing.class))).willReturn(mock());
+
+        doThrow(new RuntimeException()).when(kafkaProducerMock).send(eq(DispatchService.DISPATCH_TRACKING_TOPIC),
+                eq(messageKey),any(DispatchCompleted.class));
+
+        assertThatExceptionOfType(RuntimeException.class)
+                .isThrownBy(() -> dispatchService.process(messageKey, orderCreatedTestEvent))
+                .withMessage(PRODUCER_FAILURE);
+
+        verify(kafkaProducerMock).send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), eq(messageKey),
+                any(OrderDispatched.class));
+
+        verify(kafkaProducerMock).send(eq(DispatchService.ORDER_DISPATCHER_TOPIC),eq(messageKey), any(DispatchPreparing.class));
     }
 }

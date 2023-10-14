@@ -1,5 +1,6 @@
 package dev.lydtech.dispatch.service;
 
+import dev.lydtech.dispatch.message.DispatchCompleted;
 import dev.lydtech.dispatch.message.DispatchPreparing;
 import dev.lydtech.dispatch.message.OrderCreated;
 import dev.lydtech.dispatch.message.OrderDispatched;
@@ -8,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -35,9 +37,16 @@ public class DispatchService {
                 .orderId(orderCreated.getUuid())
                 .build();
 
+        DispatchCompleted dispatchCompleted = DispatchCompleted.builder()
+                .orderID(orderCreated.getUuid())
+                .date(LocalDate.now().toString())
+                .build();
+
         kafkaTemplate.send(ORDER_DISPATCHER_TOPIC,key,orderDispatched).get();
 
         kafkaTemplate.send(DISPATCH_TRACKING_TOPIC,key, dispatchPreparing).get();
+
+        kafkaTemplate.send(DISPATCH_TRACKING_TOPIC,key, dispatchCompleted).get();
 
         log.info("Sent message key={} -orderId={} - processed by={}",key, orderCreated.getUuid(), APPLICATION_ID);
     }
