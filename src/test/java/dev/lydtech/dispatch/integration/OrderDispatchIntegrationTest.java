@@ -107,7 +107,7 @@ class OrderDispatchIntegrationTest {
         send(ORDER_CREATED_TOPIC,messageKey,orderCreated);
 
         await().atMost(3, TimeUnit.SECONDS).pollDelay(100,TimeUnit.MILLISECONDS)
-                .until(testListener.dispatchPreparingCounter::get, equalTo(1));
+                .until(testListener.orderDispatchedCounter::get, equalTo(1));
 
         await().atMost(3,TimeUnit.SECONDS).pollDelay(100,TimeUnit.MILLISECONDS)
                 .until(testListener.dispatchPreparingCounter::get,equalTo(1));
