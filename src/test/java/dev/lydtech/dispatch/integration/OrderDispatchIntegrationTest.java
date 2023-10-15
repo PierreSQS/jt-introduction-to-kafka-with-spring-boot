@@ -1,6 +1,7 @@
 package dev.lydtech.dispatch.integration;
 
 import dev.lydtech.dispatch.config.DispatchConfig;
+import dev.lydtech.dispatch.message.DispatchCompleted;
 import dev.lydtech.dispatch.message.DispatchPreparing;
 import dev.lydtech.dispatch.message.OrderCreated;
 import dev.lydtech.dispatch.message.OrderDispatched;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.annotation.KafkaHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -24,6 +26,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -67,17 +70,25 @@ class OrderDispatchIntegrationTest {
     /**
      * Use this receiver to consume messages from the outbound topics.
      */
+    @KafkaListener(groupId = "KafkaIntegrationTest", topics = {ORDER_DISPATCHED_TOPIC,DISPATCH_TRACKING_TOPIC})
     public static class KafkaTestListener {
         AtomicInteger dispatchPreparingCounter = new AtomicInteger(0);
         AtomicInteger orderDispatchedCounter = new AtomicInteger(0);
+        AtomicInteger dispatchCompletedCounter = new AtomicInteger(0);
 
-        @KafkaListener(groupId = "KafkaIntegrationTest", topics = DISPATCH_TRACKING_TOPIC)
+        @KafkaHandler
         void receiveDispatchPreparing(@Payload DispatchPreparing payload) {
             log.debug("Received DispatchPreparing: " + payload);
             dispatchPreparingCounter.incrementAndGet();
         }
 
-        @KafkaListener(groupId = "KafkaIntegrationTest", topics = ORDER_DISPATCHED_TOPIC)
+        @KafkaHandler
+        void receiveDispatchCompleted(@Payload DispatchCompleted payload) {
+            log.debug("Received DispatchCompleted: " + payload);
+            dispatchCompletedCounter.incrementAndGet();
+        }
+
+        @KafkaHandler
         void receiveOrderDispatched(@Payload OrderDispatched payload) {
             log.debug("Received OrderDispatched: " + payload);
             orderDispatchedCounter.incrementAndGet();
@@ -88,11 +99,14 @@ class OrderDispatchIntegrationTest {
     void setUp() {
         testListener.dispatchPreparingCounter.set(0);
         testListener.orderDispatchedCounter.set(0);
+        testListener.dispatchCompletedCounter.set(0);
 
-        // Wait until the partitions are assigned.
+        // Wait until the partitions are assigned.  The application listener container has one topic and the test
+        // listener container has multiple topics, so take that into account when waiting for topic assignment.
         registry.getListenerContainers().forEach(messageListenerContainer ->
                 ContainerTestUtils.waitForAssignment(messageListenerContainer,
-                        embeddedKafkaBroker.getPartitionsPerTopic()));
+                        Objects.requireNonNull(messageListenerContainer.getContainerProperties()
+                                .getTopics()).length * embeddedKafkaBroker.getPartitionsPerTopic()));
 
         messageKey = UUID.randomUUID().toString();
     }
@@ -111,6 +125,9 @@ class OrderDispatchIntegrationTest {
 
         await().atMost(3,TimeUnit.SECONDS).pollDelay(100,TimeUnit.MILLISECONDS)
                 .until(testListener.dispatchPreparingCounter::get,equalTo(1));
+
+        await().atMost(3,TimeUnit.SECONDS).pollDelay(100,TimeUnit.MILLISECONDS)
+                .until(testListener.dispatchCompletedCounter::get,equalTo(1));
     }
 
     private void send(String topic, String messageKey, Object data) throws Exception{
