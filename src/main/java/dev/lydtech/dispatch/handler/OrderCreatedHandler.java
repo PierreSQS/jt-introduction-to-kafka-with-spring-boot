@@ -1,5 +1,6 @@
 package dev.lydtech.dispatch.handler;
 
+import dev.lydtech.dispatch.message.OrderCreated;
 import dev.lydtech.dispatch.service.DispatchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,10 +19,10 @@ public class OrderCreatedHandler {
             topics = "order.created",
             groupId = "dispatch.order.create.consumer-group"
     )
-    public void listen(String payload) {
-        log.info("Received order-created event: {}", payload);
+    public void listen(OrderCreated orderCreated) {
+        log.info("Received order-created event: {}", orderCreated);
 
         // process Order Event
-        dispatchService.processOrder(payload);
+        dispatchService.processOrder(orderCreated);
     }
 }
