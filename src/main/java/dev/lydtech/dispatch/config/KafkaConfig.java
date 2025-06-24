@@ -27,6 +27,7 @@ public class KafkaConfig {
      * @param consumerFactory the ConsumerFactory to use for creating consumers
      * @return a ConcurrentKafkaListenerContainerFactory configured with the provided ConsumerFactory
      */
+    @Bean
     public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory(
             ConsumerFactory<String, Object> consumerFactory) {
         ConcurrentKafkaListenerContainerFactory<String, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
