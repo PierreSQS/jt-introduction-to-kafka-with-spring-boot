@@ -14,9 +14,9 @@ public class DispatchService {
 
     private static final String ORDER_DISPATCH_TOPIC = "order.dispatched";
 
-    private KafkaTemplate<String, Object> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    public void process(OrderCreated payload) {
+    public void process(OrderCreated payload) throws Exception {
         log.info("Processing order: {}", payload);
 
         // Process the order
@@ -26,8 +26,8 @@ public class DispatchService {
                 .orderId(payload.getOrderId())
                 .build();
 
-        // 2. Send the order dispatched event to Kafka asynchronously
-        kafkaTemplate.send(ORDER_DISPATCH_TOPIC, orderDispatched);
+        // 2. Send the order dispatched event to Kafka synchronously
+        kafkaTemplate.send(ORDER_DISPATCH_TOPIC, orderDispatched).get();
 
         log.info("Dispatched order: {}", orderDispatched);
     }

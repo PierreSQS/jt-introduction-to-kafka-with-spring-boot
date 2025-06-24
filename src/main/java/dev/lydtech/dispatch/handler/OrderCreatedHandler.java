@@ -20,7 +20,12 @@ public class OrderCreatedHandler {
             groupId = "dispatch.order.created.consumer"
     )
     public void listen(OrderCreated payload) {
-        log.info("Received message: payload: " + payload);
-        dispatchService.process(payload);
+        log.info("Received message: payload: {}", payload);
+
+        try {
+            dispatchService.process(payload);
+        } catch (Exception e) {
+            log.error("Error processing order: {}", payload, e);
+        }
     }
 }
