@@ -1,5 +1,6 @@
 package dev.lydtech.dispatch.service;
 
+import dev.lydtech.dispatch.message.DispatchPreparing;
 import dev.lydtech.dispatch.message.OrderCreated;
 import dev.lydtech.dispatch.message.OrderDispatched;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,8 @@ public class DispatchService {
 
     private static final String ORDER_DISPATCH_TOPIC = "order.dispatched";
 
+    private static final String DISPATCH_TRACKING_TOPIC = "dispatch.tracking";
+
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public void process(OrderCreated payload) throws Exception {
@@ -21,14 +24,26 @@ public class DispatchService {
 
         // Process the order
 
-        // 1. Create an OrderDispatched event
+        // 1a. Create an OrderDispatched event
         OrderDispatched orderDispatched = OrderDispatched.builder()
                 .orderId(payload.getOrderId())
                 .build();
 
-        // 2. Send the order dispatched event to Kafka synchronously
+        // 1b. Create a DispatchPreparing event
+        DispatchPreparing dispatchPreparing = DispatchPreparing.builder()
+                .orderId(payload.getOrderId())
+                .build();
+
+        // 2. Send the order dispatched event to the 'order.dispatched' topic in Kafka synchronously
         kafkaTemplate.send(ORDER_DISPATCH_TOPIC, orderDispatched).get();
 
-        log.info("Dispatched order: {}", orderDispatched);
+        // 3. Log the dispatched order event
+        log.info("Dispatched order: {} send", orderDispatched);
+
+        // 4. Send the dispatch preparing event to the 'dispatch.tracking' topic in Kafka synchronously
+        kafkaTemplate.send(DISPATCH_TRACKING_TOPIC, dispatchPreparing).get();
+
+        // 5. Log the dispatch preparing event
+        log.info("DispatchPreparing: {} send", dispatchPreparing);
     }
 }
