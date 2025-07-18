@@ -1,6 +1,6 @@
 package dev.lydtech.dispatch.config;
 
-import dev.lydtech.dispatch.message.OrderCreated;
+import dev.lydtech.dispatch.event.OrderCreated;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;

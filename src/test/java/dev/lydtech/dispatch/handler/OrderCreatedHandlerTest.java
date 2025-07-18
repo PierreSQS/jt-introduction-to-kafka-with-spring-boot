@@ -1,6 +1,6 @@
 package dev.lydtech.dispatch.handler;
 
-import dev.lydtech.dispatch.message.OrderCreated;
+import dev.lydtech.dispatch.event.OrderCreated;
 import dev.lydtech.dispatch.service.DispatchService;
 import dev.lydtech.dispatch.util.TestEventData;
 import org.junit.jupiter.api.BeforeEach;

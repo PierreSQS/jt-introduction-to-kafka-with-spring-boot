@@ -2,7 +2,7 @@ package dev.lydtech.dispatch.util;
 
 import java.util.UUID;
 
-import dev.lydtech.dispatch.message.OrderCreated;
+import dev.lydtech.dispatch.event.OrderCreated;
 
 public class TestEventData {
 
