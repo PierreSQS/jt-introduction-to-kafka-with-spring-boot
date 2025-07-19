@@ -2,6 +2,7 @@ package dev.lydtech.dispatch.service;
 
 import java.util.concurrent.CompletableFuture;
 
+import dev.lydtech.dispatch.event.DispatchPreparing;
 import dev.lydtech.dispatch.event.OrderCreated;
 import dev.lydtech.dispatch.event.OrderDispatched;
 import dev.lydtech.dispatch.util.TestEventData;
@@ -37,17 +38,28 @@ class DispatchServiceTest {
     @Test
     void process_Success() throws Exception {
         // Given
+        // Mock the sending of the OrderDispatched event
         given(kafkaTemplateMock.send(anyString(), any(OrderDispatched.class))).willReturn(mock(CompletableFuture.class));
 
-        OrderCreated testEvent = TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
+        // Mock the sending of the DispatchPreparing event
+        given(kafkaTemplateMock.send(anyString(), any(DispatchPreparing.class))).willReturn(mock(CompletableFuture.class));
+
+        OrderCreated orderCreatedEvent = TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
 
         // When
-        service.process(testEvent);
+        service.process(orderCreatedEvent);
 
-        // Then, Verify that the order was processed correctly
+        // Then
+        // Verify that the order event was sent to the 'order.dispatched' topic
         verify(kafkaTemplateMock, times(1))
-                .send("order.dispatched", OrderDispatched.builder()
-                        .orderId(testEvent.getOrderId())
+                .send(DispatchService.ORDER_DISPATCH_TOPIC, OrderDispatched.builder()
+                        .orderId(orderCreatedEvent.getOrderId())
+                        .build());
+
+        // Verify that the dispatch preparing event was sent to the 'dispatch.tracking' topic
+        verify(kafkaTemplateMock, times(1))
+                .send(DispatchService.DISPATCH_TRACKING_TOPIC, DispatchPreparing.builder()
+                        .orderId(orderCreatedEvent.getOrderId())
                         .build());
     }
 

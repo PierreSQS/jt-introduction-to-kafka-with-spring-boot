@@ -13,9 +13,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class DispatchService {
 
-    private static final String ORDER_DISPATCH_TOPIC = "order.dispatched";
+    public static final String ORDER_DISPATCH_TOPIC = "order.dispatched";
 
-    private static final String DISPATCH_TRACKING_TOPIC = "dispatch.tracking";
+    public static final String DISPATCH_TRACKING_TOPIC = "dispatch.tracking";
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
