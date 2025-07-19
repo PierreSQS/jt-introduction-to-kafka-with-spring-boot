@@ -76,6 +76,7 @@ class DispatchServiceTest {
     @Test
     void testProcess_DispatchPreparingProducerThrowsException() {
         OrderCreated testEvent = TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
+        doThrow(new RuntimeException("Producer failure")).when(kafkaTemplateMock).send(eq("order.dispatched"), any(OrderDispatched.class));
         doThrow(new RuntimeException("Producer failure")).when(kafkaTemplateMock).send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), any(OrderDispatched.class));
 
         assertThatThrownBy(() -> service.process(testEvent))
