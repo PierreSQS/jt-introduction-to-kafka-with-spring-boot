@@ -13,7 +13,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
@@ -37,10 +36,10 @@ class DispatchServiceTest {
     void process_Success() throws Exception {
         // Given
         // Mock the sending of the OrderDispatched event
-        given(kafkaTemplateMock.send(anyString(), any(OrderDispatched.class))).willReturn(mock(CompletableFuture.class));
+        given(kafkaTemplateMock.send(eq(DispatchService.ORDER_DISPATCH_TOPIC), any(OrderDispatched.class))).willReturn(mock(CompletableFuture.class));
 
         // Mock the sending of the DispatchPreparing event
-        given(kafkaTemplateMock.send(anyString(), any(DispatchPreparing.class))).willReturn(mock(CompletableFuture.class));
+        given(kafkaTemplateMock.send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), any(DispatchPreparing.class))).willReturn(mock(CompletableFuture.class));
 
         OrderCreated orderCreatedEvent = TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
 
@@ -64,25 +63,27 @@ class DispatchServiceTest {
     @Test
     void testProcess_OrderDispatchedProducerThrowsException() {
         OrderCreated testEvent = TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
-        doThrow(new RuntimeException("Producer failure")).when(kafkaTemplateMock).send(eq("order.dispatched"), any(OrderDispatched.class));
+
+        doThrow(new RuntimeException("Producer failure")).when(kafkaTemplateMock).send(eq(DispatchService.ORDER_DISPATCH_TOPIC), any(OrderDispatched.class));
 
         assertThatThrownBy(() -> service.process(testEvent))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("Producer failure");
 
-        verify(kafkaTemplateMock, times(1)).send(eq("order.dispatched"), any(OrderDispatched.class));
+        verify(kafkaTemplateMock, times(1)).send(eq(DispatchService.ORDER_DISPATCH_TOPIC), any(OrderDispatched.class));
     }
 
     @Test
     void testProcess_DispatchPreparingProducerThrowsException() {
         OrderCreated testEvent = TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
-        doThrow(new RuntimeException("Producer failure")).when(kafkaTemplateMock).send(eq("order.dispatched"), any(OrderDispatched.class));
-        doThrow(new RuntimeException("Producer failure")).when(kafkaTemplateMock).send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), any(OrderDispatched.class));
+
+        doThrow(new RuntimeException("Producer failure")).when(kafkaTemplateMock).send(eq(DispatchService.ORDER_DISPATCH_TOPIC), any(OrderDispatched.class));
+        doThrow(new RuntimeException("Producer failure")).when(kafkaTemplateMock).send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), any(DispatchPreparing.class));
 
         assertThatThrownBy(() -> service.process(testEvent))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("Producer failure");
 
-        verify(kafkaTemplateMock, times(1)).send(eq("order.dispatched"), any(OrderDispatched.class));
+        verify(kafkaTemplateMock, times(1)).send(eq(DispatchService.ORDER_DISPATCH_TOPIC), any(OrderDispatched.class));
     }
 }
