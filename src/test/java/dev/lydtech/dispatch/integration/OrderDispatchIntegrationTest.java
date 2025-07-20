@@ -12,9 +12,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.kafka.test.utils.ContainerTestUtils;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -40,14 +45,23 @@ class OrderDispatchIntegrationTest {
     @Autowired
     KafkaListenerContainer kafkaListenerContainer;
 
+    @Autowired
+    EmbeddedKafkaBroker embeddedKafkaBroker;
+
+    @Autowired
+    KafkaListenerEndpointRegistry kafkaListenerEndpointRegistry;
+
     @BeforeEach
     void setUp() {
         kafkaListenerContainer.orderDispatchedCounter.set(0);
         kafkaListenerContainer.dispatchedPreparingCounter.set(0);
+
+        kafkaListenerEndpointRegistry.getListenerContainers().forEach(container ->
+                ContainerTestUtils.waitForAssignment(container, embeddedKafkaBroker.getPartitionsPerTopic()));
     }
 
     @Test
-    void testOrderDispatchFlow() throws Exception {
+    void testOrderDispatchFlow() {
         // This test will verify the end-to-end flow of order dispatching
         // It will involve sending an OrderCreated event and verifying the
         // OrderDispatched and DispatchPreparing events are produced correctly.
@@ -71,7 +85,10 @@ class OrderDispatchIntegrationTest {
     }
 
     private void sendEventMessage(String topic, Object object) {
-        kafkaTemplate.send(topic, object);
+        kafkaTemplate.send(MessageBuilder
+                .withPayload(MessageBuilder.withPayload(object)
+                .setHeader(KafkaHeaders.TOPIC, topic))
+                .build());
     }
 
     @Configuration
