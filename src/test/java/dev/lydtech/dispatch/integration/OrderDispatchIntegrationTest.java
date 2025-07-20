@@ -4,7 +4,10 @@ import dev.lydtech.dispatch.event.OrderDispatched;
 import dev.lydtech.dispatch.service.DispatchService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -20,6 +23,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @EmbeddedKafka(controlledShutdown = true)
 class OrderDispatchIntegrationTest {
 
+    @Autowired
+    KafkaListenerContainer kafkaListenerContainer;
+
     @Test
     void testOrderDispatchFlow() throws Exception {
         // This test will verify the end-to-end flow of order dispatching
@@ -31,6 +37,16 @@ class OrderDispatchIntegrationTest {
 
 
         log.info("Order Dispatch Integration Test completed successfully.");
+    }
+
+    @Configuration
+    static class TestConfig {
+
+        @Bean
+        public KafkaListenerContainer kafkaListenerContainer() {
+            return new KafkaListenerContainer();
+        }
+
     }
 
     // Kafka Listener Container
