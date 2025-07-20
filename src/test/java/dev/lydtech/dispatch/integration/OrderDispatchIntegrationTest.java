@@ -1,7 +1,9 @@
 package dev.lydtech.dispatch.integration;
 
+import dev.lydtech.dispatch.event.OrderCreated;
 import dev.lydtech.dispatch.event.OrderDispatched;
 import dev.lydtech.dispatch.service.DispatchService;
+import dev.lydtech.dispatch.util.TestEventData;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,12 +11,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static java.util.UUID.randomUUID;
+import static org.awaitility.Awaitility.await;
+import static org.hamcrest.Matchers.equalTo;
 
 @Slf4j
 @SpringBootTest
@@ -22,6 +30,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 @ActiveProfiles("test")
 @EmbeddedKafka(controlledShutdown = true)
 class OrderDispatchIntegrationTest {
+
+    private static final String ORDER_CREATED_TOPIC = "order.created";
+
+    @Autowired
+    KafkaTemplate <String, Object> kafkaTemplate;
 
     @Autowired
     KafkaListenerContainer kafkaListenerContainer;
@@ -34,9 +47,24 @@ class OrderDispatchIntegrationTest {
 
         log.info("Starting Order Dispatch Integration Test...");
 
+        OrderCreated orderCreated = TestEventData.buildOrderCreatedEvent(randomUUID(), "test-order-item");
+
+        log.info("Sending OrderCreated event: {}", orderCreated);
+        sendEventMessage(ORDER_CREATED_TOPIC, orderCreated);
+
+        // Wait for the events to be processed
+        await().atMost(3, TimeUnit.SECONDS).pollDelay(100, TimeUnit.MILLISECONDS)
+                .until(kafkaListenerContainer.orderDispatchedCounter::get, equalTo(1));
+
+        await().atMost(3, TimeUnit.SECONDS).pollDelay(100, TimeUnit.MILLISECONDS)
+                .until(() -> kafkaListenerContainer.dispatchedPreparingCounter.get(),count -> count == 1);
 
 
         log.info("Order Dispatch Integration Test completed successfully.");
+    }
+
+    private void sendEventMessage(String topic, Object object) {
+        kafkaTemplate.send(topic, object);
     }
 
     @Configuration
