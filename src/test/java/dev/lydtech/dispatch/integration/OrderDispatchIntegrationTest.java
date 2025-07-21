@@ -1,5 +1,6 @@
 package dev.lydtech.dispatch.integration;
 
+import dev.lydtech.dispatch.config.KafkaConfig;
 import dev.lydtech.dispatch.event.OrderCreated;
 import dev.lydtech.dispatch.event.OrderDispatched;
 import dev.lydtech.dispatch.service.DispatchService;
@@ -31,7 +32,7 @@ import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 
 @Slf4j
-@SpringBootTest
+@SpringBootTest(classes = {KafkaConfig.class, OrderDispatchIntegrationTest.TestConfig.class})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ActiveProfiles("test")
 @EmbeddedKafka(controlledShutdown = true)
@@ -97,6 +98,11 @@ class OrderDispatchIntegrationTest {
         @Bean
         public KafkaListenerContainer kafkaListenerContainer() {
             return new KafkaListenerContainer();
+        }
+
+        @Bean
+        public KafkaListenerEndpointRegistry kafkaListenerEndpointRegistry() {
+            return new KafkaListenerEndpointRegistry();
         }
 
     }
