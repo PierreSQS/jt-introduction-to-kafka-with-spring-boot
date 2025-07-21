@@ -87,8 +87,8 @@ class OrderDispatchIntegrationTest {
 
     private void sendEventMessage(String topic, Object object) throws Exception {
         kafkaTemplate.send(MessageBuilder
-                .withPayload(MessageBuilder.withPayload(object)
-                .setHeader(KafkaHeaders.TOPIC, topic))
+                .withPayload(object)
+                .setHeader(KafkaHeaders.TOPIC, topic)
                 .build()).get();
     }
 
