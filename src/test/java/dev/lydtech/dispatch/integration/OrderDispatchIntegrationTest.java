@@ -62,7 +62,7 @@ class OrderDispatchIntegrationTest {
     }
 
     @Test
-    void testOrderDispatchFlow() {
+    void testOrderDispatchFlow() throws Exception {
         // This test will verify the end-to-end flow of order dispatching
         // It will involve sending an OrderCreated event and verifying the
         // OrderDispatched and DispatchPreparing events are produced correctly.
@@ -85,11 +85,11 @@ class OrderDispatchIntegrationTest {
         log.info("Order Dispatch Integration Test completed successfully.");
     }
 
-    private void sendEventMessage(String topic, Object object) {
+    private void sendEventMessage(String topic, Object object) throws Exception {
         kafkaTemplate.send(MessageBuilder
                 .withPayload(MessageBuilder.withPayload(object)
                 .setHeader(KafkaHeaders.TOPIC, topic))
-                .build());
+                .build()).get();
     }
 
     @Configuration
