@@ -37,9 +37,9 @@ import static org.hamcrest.Matchers.equalTo;
 @ActiveProfiles(profiles = {"test"})
 @EmbeddedKafka(controlledShutdown = true)
 class OrderDispatchIntegrationTest {
-    private final static String ORDER_CREATED_TOPIC = "order.created";
-    private final static String ORDER_DISPATCHED_TOPIC = "order.dispatched";
-    private final static String DISPATCH_TRACKING_TOPIC = "dispatch.tracking";
+    private static final String ORDER_CREATED_TOPIC = "order.created";
+    private static final String ORDER_DISPATCHED_TOPIC = "order.dispatched";
+    private static final String DISPATCH_TRACKING_TOPIC = "dispatch.tracking";
 
     @Autowired
     private KafkaTemplate<String,Object> kafkaTemplate;
@@ -71,13 +71,13 @@ class OrderDispatchIntegrationTest {
 
         @KafkaListener(groupId = "KafkaIntegrationTest", topics = DISPATCH_TRACKING_TOPIC)
         void receiveDispatchPreparing(@Payload DispatchPreparing payload) {
-            log.debug("Received DispatchPreparing: " + payload);
+            log.debug("Received DispatchPreparing: {}", payload);
             dispatchPreparingCounter.incrementAndGet();
         }
 
         @KafkaListener(groupId = "KafkaIntegrationTest", topics = ORDER_DISPATCHED_TOPIC)
         void receiveOrderDispatched(@Payload OrderDispatched payload) {
-            log.debug("Received OrderDispatched: " + payload);
+            log.debug("Received OrderDispatched: {}", payload);
             orderDispatchedCounter.incrementAndGet();
         }
     }
