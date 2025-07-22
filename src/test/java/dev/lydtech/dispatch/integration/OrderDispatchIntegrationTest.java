@@ -1,6 +1,7 @@
 package dev.lydtech.dispatch.integration;
 
 import dev.lydtech.dispatch.config.KafkaConfig;
+import dev.lydtech.dispatch.event.DispatchPreparing;
 import dev.lydtech.dispatch.event.OrderCreated;
 import dev.lydtech.dispatch.event.OrderDispatched;
 import dev.lydtech.dispatch.service.DispatchService;
@@ -121,7 +122,7 @@ class OrderDispatchIntegrationTest {
         }
 
         @KafkaListener(groupId = "KafkaIntegrationTest", topics = DispatchService.DISPATCH_TRACKING_TOPIC)
-        void onDispatchPreparing(final @Payload OrderDispatched dispatchPreparing) {
+        void onDispatchPreparing(final @Payload DispatchPreparing dispatchPreparing) {
             log.info("Received DispatchPreparing event: {}", dispatchPreparing);
             dispatchedPreparingCounter.incrementAndGet();
         }
