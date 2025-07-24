@@ -33,7 +33,7 @@ import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 
 @Slf4j
-@SpringBootTest(classes = {KafkaConfig.class, OrderDispatchIntegrationTest.TestConfig.class})
+@SpringBootTest(classes = {KafkaConfig.class})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ActiveProfiles("test")
 @EmbeddedKafka(controlledShutdown = true)
@@ -99,11 +99,6 @@ class OrderDispatchIntegrationTest {
         @Bean
         public KafkaListenerContainer kafkaListenerContainer() {
             return new KafkaListenerContainer();
-        }
-
-        @Bean
-        public KafkaListenerEndpointRegistry kafkaListenerEndpointRegistry() {
-            return new KafkaListenerEndpointRegistry();
         }
 
     }
