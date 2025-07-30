@@ -1,5 +1,6 @@
 package dev.lydtech.dispatch.integration;
 
+import dev.lydtech.dispatch.event.DispatchPreparing;
 import dev.lydtech.dispatch.event.OrderCreated;
 import dev.lydtech.dispatch.event.OrderDispatched;
 import dev.lydtech.dispatch.service.DispatchService;
@@ -15,6 +16,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -38,12 +40,12 @@ class OrderDispatchIntegrationTest {
     KafkaTemplate <String, Object> kafkaTemplate;
 
     @Autowired
-    KafkaListenerContainer kafkaListenerContainer;
+    KafkaTestListener kafkaTestListener;
 
     @BeforeEach
     void setUp() {
-        kafkaListenerContainer.orderDispatchedCounter.set(0);
-        kafkaListenerContainer.dispatchedPreparingCounter.set(0);
+        kafkaTestListener.orderDispatchedCounter.set(0);
+        kafkaTestListener.dispatchedPreparingCounter.set(0);
     }
 
     @Test
@@ -61,31 +63,34 @@ class OrderDispatchIntegrationTest {
 
         // Wait for the events to be processed
         await().atMost(3, TimeUnit.SECONDS).pollDelay(100, TimeUnit.MILLISECONDS)
-                .until(kafkaListenerContainer.orderDispatchedCounter::get, equalTo(1));
+                .until(kafkaTestListener.orderDispatchedCounter::get, equalTo(1));
 
         await().atMost(3, TimeUnit.SECONDS).pollDelay(100, TimeUnit.MILLISECONDS)
-                .until(() -> kafkaListenerContainer.dispatchedPreparingCounter.get(),count -> count == 1);
+                .until(() -> kafkaTestListener.dispatchedPreparingCounter.get(), count -> count == 1);
 
 
         log.info("Order Dispatch Integration Test completed successfully.");
     }
 
-    private void sendEventMessage(String topic, Object object) {
-        kafkaTemplate.send(topic, object);
+    private void sendEventMessage(String topic, Object object) throws Exception {
+        kafkaTemplate.send(MessageBuilder
+                .withPayload(object)
+                .setHeader("kafka_topic", topic)
+                .build()).get();
     }
 
     @Configuration
     static class TestConfig {
 
         @Bean
-        public KafkaListenerContainer kafkaListenerContainer() {
-            return new KafkaListenerContainer();
+        public KafkaTestListener kafkaListenerContainer() {
+            return new KafkaTestListener();
         }
 
     }
 
     // Kafka Listener Container
-    public static class KafkaListenerContainer {
+    public static class KafkaTestListener {
 
         AtomicInteger dispatchedPreparingCounter = new AtomicInteger(0);
 
@@ -98,7 +103,7 @@ class OrderDispatchIntegrationTest {
         }
 
         @KafkaListener(groupId = "KafkaIntegrationTest", topics = DispatchService.DISPATCH_TRACKING_TOPIC)
-        void onDispatchPreparing(final @Payload OrderDispatched dispatchPreparing) {
+        void onDispatchPreparing(final @Payload DispatchPreparing dispatchPreparing) {
             log.info("Received DispatchPreparing event: {}", dispatchPreparing);
             dispatchedPreparingCounter.incrementAndGet();
         }
