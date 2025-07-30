@@ -1,5 +1,6 @@
 package dev.lydtech.dispatch.integration;
 
+import dev.lydtech.dispatch.config.KafkaConfig;
 import dev.lydtech.dispatch.event.DispatchPreparing;
 import dev.lydtech.dispatch.event.OrderCreated;
 import dev.lydtech.dispatch.event.OrderDispatched;
@@ -28,7 +29,7 @@ import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 
 @Slf4j
-@SpringBootTest
+@SpringBootTest(classes = {KafkaConfig.class})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ActiveProfiles("test")
 @EmbeddedKafka(controlledShutdown = true)
