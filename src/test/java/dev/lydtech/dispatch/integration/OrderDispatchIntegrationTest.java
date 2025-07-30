@@ -14,8 +14,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.kafka.test.utils.ContainerTestUtils;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.annotation.DirtiesContext;
@@ -43,10 +47,19 @@ class OrderDispatchIntegrationTest {
     @Autowired
     KafkaTestListener kafkaTestListener;
 
+    @Autowired
+    EmbeddedKafkaBroker embeddedKafkaBroker;
+
+    @Autowired
+    KafkaListenerEndpointRegistry kafkaListenerEndpointRegistry;
+
     @BeforeEach
     void setUp() {
         kafkaTestListener.orderDispatchedCounter.set(0);
         kafkaTestListener.dispatchedPreparingCounter.set(0);
+
+        kafkaListenerEndpointRegistry.getListenerContainers().forEach(container ->
+                ContainerTestUtils.waitForAssignment(container, embeddedKafkaBroker.getPartitionsPerTopic()));
     }
 
     @Test
@@ -76,7 +89,7 @@ class OrderDispatchIntegrationTest {
     private void sendEventMessage(String topic, Object object) throws Exception {
         kafkaTemplate.send(MessageBuilder
                 .withPayload(object)
-                .setHeader("kafka_topic", topic)
+                .setHeader(KafkaHeaders.TOPIC, topic)
                 .build()).get();
     }
 
