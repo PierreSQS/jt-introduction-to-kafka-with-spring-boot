@@ -36,7 +36,7 @@ import static org.hamcrest.Matchers.equalTo;
 @SpringBootTest(classes = {KafkaConfig.class})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ActiveProfiles("test")
-@EmbeddedKafka(controlledShutdown = true)
+@EmbeddedKafka(kraft = true, controlledShutdown = true)
 class OrderDispatchIntegrationTest {
 
     private static final String ORDER_CREATED_TOPIC = "order.created";
