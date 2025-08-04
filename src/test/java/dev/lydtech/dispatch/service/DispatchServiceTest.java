@@ -52,6 +52,8 @@ class DispatchServiceTest {
         verify(kafkaTemplateMock, times(1))
                 .send(DispatchService.ORDER_DISPATCH_TOPIC, OrderDispatched.builder()
                         .orderId(orderCreatedEvent.getOrderId())
+                        .processedById(DispatchService.APPLICATION_ID)
+                        .notes("Dispatched order with ID: " + orderCreatedEvent.getOrderId())
                         .build());
 
         // Verify that the dispatch preparing event was sent to the 'dispatch.tracking' topic

@@ -19,7 +19,7 @@ public class DispatchService {
 
     public static final String DISPATCH_TRACKING_TOPIC = "dispatch.tracking";
 
-    private static final UUID APPLICATION_ID = UUID.randomUUID();
+    public static final UUID APPLICATION_ID = UUID.randomUUID();
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
