@@ -23,7 +23,7 @@ public class DispatchService {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    public void process(OrderCreated payload) throws Exception {
+    public void process(String key, OrderCreated payload) throws Exception {
         log.info("Processing order: {}", payload);
 
         // Process the order
@@ -41,15 +41,15 @@ public class DispatchService {
                 .build();
 
         // 2. Send the order dispatched event to the 'order.dispatched' topic in Kafka synchronously
-        kafkaTemplate.send(ORDER_DISPATCH_TOPIC, orderDispatched).get();
+        kafkaTemplate.send(ORDER_DISPATCH_TOPIC, key, orderDispatched).get();
 
         // 3. Log the dispatched order event
-        log.info("Dispatched order: {} send", orderDispatched);
+        log.info("key {}, OrderDispatched: {} send", key, orderDispatched);
 
         // 4. Send the dispatch preparing event to the 'dispatch.tracking' topic in Kafka synchronously
-        kafkaTemplate.send(DISPATCH_TRACKING_TOPIC, dispatchPreparing).get();
+        kafkaTemplate.send(DISPATCH_TRACKING_TOPIC, key, dispatchPreparing).get();
 
         // 5. Log the dispatch preparing event
-        log.info("DispatchPreparing: {} send", dispatchPreparing);
+        log.info("key {}, DispatchPreparing: {} send", key, dispatchPreparing);
     }
 }
