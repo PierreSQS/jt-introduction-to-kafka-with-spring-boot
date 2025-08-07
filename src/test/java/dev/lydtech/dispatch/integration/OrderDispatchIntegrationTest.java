@@ -20,6 +20,7 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.ContainerTestUtils;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.annotation.DirtiesContext;
@@ -29,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.UUID.randomUUID;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -113,14 +115,22 @@ class OrderDispatchIntegrationTest {
         AtomicInteger orderDispatchedCounter = new AtomicInteger(0);
 
         @KafkaListener(groupId = "KafkaIntegrationTest", topics = DispatchService.ORDER_DISPATCH_TOPIC)
-        void onOrderDispatched(final @Payload OrderDispatched orderDispatched) {
-            log.info("Received OrderDispatched event: {}", orderDispatched);
+        void onOrderDispatched(@Header(KafkaHeaders.RECEIVED_KEY) String msgKey,final @Payload OrderDispatched orderDispatched) {
+            log.info("Received key {} and OrderDispatched event: {}", msgKey, orderDispatched);
+
+            // Validate the received message key and event
+            assertThat(msgKey).isNotBlank();
+            assertThat(orderDispatched).isNotNull();
             orderDispatchedCounter.incrementAndGet();
         }
 
         @KafkaListener(groupId = "KafkaIntegrationTest", topics = DispatchService.DISPATCH_TRACKING_TOPIC)
-        void onDispatchPreparing(final @Payload DispatchPreparing dispatchPreparing) {
-            log.info("Received DispatchPreparing event: {}", dispatchPreparing);
+        void onDispatchPreparing(@Header(KafkaHeaders.RECEIVED_KEY) String msgKey, final @Payload DispatchPreparing dispatchPreparing) {
+            log.info("Received key {} and DispatchPreparing event: {}", msgKey, dispatchPreparing);
+
+            // Validate the received message key and event
+            assertThat(msgKey).isNotNull();
+            assertThat(dispatchPreparing).isNotNull();
             dispatchedPreparingCounter.incrementAndGet();
         }
     }
