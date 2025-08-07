@@ -17,6 +17,10 @@ class OrderCreatedHandlerTest {
     private OrderCreatedHandler handler;
     private DispatchService dispatchServiceMock;
 
+    // Generate a random key for the message
+    // This key can be used to correlate messages in Kafka
+    String messageKey = randomUUID().toString();
+
     @BeforeEach
     void setUp() {
         dispatchServiceMock = mock(DispatchService.class);
@@ -26,23 +30,21 @@ class OrderCreatedHandlerTest {
     @Test
     void listen_Success() throws Exception {
         OrderCreated testEvent = TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
-        String key = randomUUID().toString();
 
-        handler.listen(0,key, testEvent);
+        handler.listen(0,messageKey, testEvent);
 
-        verify(dispatchServiceMock, times(1)).process(key, testEvent);
+        verify(dispatchServiceMock, times(1)).process(messageKey, testEvent);
     }
 
     @Test
     void listen_ServiceThrowsException() throws Exception {
-        String key = randomUUID().toString();
 
         // Simulate a service failure by throwing an exception when processing the event
         OrderCreated testEvent = TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
-        doThrow(new RuntimeException("Service failure")).when(dispatchServiceMock).process(key, testEvent);
+        doThrow(new RuntimeException("Service failure")).when(dispatchServiceMock).process(messageKey, testEvent);
 
-        handler.listen(0,key, testEvent);
+        handler.listen(0,messageKey, testEvent);
 
-        verify(dispatchServiceMock, times(1)).process(key, testEvent);
+        verify(dispatchServiceMock, times(1)).process(messageKey, testEvent);
     }
 }

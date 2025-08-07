@@ -73,10 +73,10 @@ class OrderDispatchIntegrationTest {
         log.info("Starting Order Dispatch Integration Test...");
 
         OrderCreated orderCreated = TestEventData.buildOrderCreatedEvent(randomUUID(), "test-order-item");
-        String key = randomUUID().toString();
+        String msgKey = randomUUID().toString();
 
         log.info("Sending OrderCreated event: {}", orderCreated);
-        sendEventMessage(ORDER_CREATED_TOPIC, key, orderCreated);
+        sendEventMessage(msgKey, orderCreated);
 
         // Wait for the events to be processed
         await().atMost(3, TimeUnit.SECONDS).pollDelay(100, TimeUnit.MILLISECONDS)
@@ -89,11 +89,12 @@ class OrderDispatchIntegrationTest {
         log.info("Order Dispatch Integration Test completed successfully.");
     }
 
-    private void sendEventMessage(String topic, String key, Object object) throws Exception {
+    private void sendEventMessage(String msgKey, Object object) throws Exception {
         kafkaTemplate.send(MessageBuilder
                 .withPayload(object)
-                .setHeader(KafkaHeaders.TOPIC, topic)
-                .setHeader(KafkaHeaders.KEY, key)
+                .setHeader(KafkaHeaders.TOPIC,
+                        OrderDispatchIntegrationTest.ORDER_CREATED_TOPIC)
+                .setHeader(KafkaHeaders.KEY, msgKey)
                 .build()).get();
     }
 

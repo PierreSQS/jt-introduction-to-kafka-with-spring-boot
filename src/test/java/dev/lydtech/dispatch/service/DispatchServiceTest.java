@@ -28,6 +28,10 @@ class DispatchServiceTest {
 
     private KafkaTemplate <String, Object> kafkaTemplateMock;
 
+    // Generate a random messageKey for the message
+    // This messageKey can be used to correlate messages in Kafka
+    private final String messageKey = randomUUID().toString();
+
     @BeforeEach
     void setUp() {
         kafkaTemplateMock = mock(KafkaTemplate.class);
@@ -37,10 +41,7 @@ class DispatchServiceTest {
     @Test
     void process_Success() throws Exception {
         // Given
-        // Generate a random key for the message
-        // This key can be used to correlate messages in Kafka
-        String key = randomUUID().toString();
-
+        
         // Mock the sending of the OrderDispatched event
         given(kafkaTemplateMock.send(eq(DispatchService.ORDER_DISPATCH_TOPIC), anyString(), any(OrderDispatched.class))).willReturn(mock(CompletableFuture.class));
 
@@ -50,12 +51,12 @@ class DispatchServiceTest {
         OrderCreated orderCreatedEvent = TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
 
         // When
-        service.process(key,orderCreatedEvent);
+        service.process(messageKey,orderCreatedEvent);
 
         // Then
         // Verify that the order event was sent to the 'order.dispatched' topic
         verify(kafkaTemplateMock, times(1))
-                .send(DispatchService.ORDER_DISPATCH_TOPIC, key,
+                .send(DispatchService.ORDER_DISPATCH_TOPIC, messageKey,
                         OrderDispatched.builder()
                                 .orderId(orderCreatedEvent.getOrderId())
                                 .processedById(DispatchService.APPLICATION_ID)
@@ -64,7 +65,7 @@ class DispatchServiceTest {
 
         // Verify that the dispatch preparing event was sent to the 'dispatch.tracking' topic
         verify(kafkaTemplateMock, times(1))
-                .send(DispatchService.DISPATCH_TRACKING_TOPIC, key,
+                .send(DispatchService.DISPATCH_TRACKING_TOPIC, messageKey,
                         DispatchPreparing.builder()
                                 .orderId(orderCreatedEvent.getOrderId())
                                 .build());
@@ -74,20 +75,16 @@ class DispatchServiceTest {
     void testProcess_OrderDispatchedProducerThrowsException() {
         OrderCreated testEvent = TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
 
-        // Generate a random key for the message
-        // This key can be used to correlate messages in Kafka
-        String key = randomUUID().toString();
-
         // refined the error message
         doThrow(new RuntimeException("Order Dispatch Producer failure")).when(kafkaTemplateMock)
-                .send(eq(DispatchService.ORDER_DISPATCH_TOPIC), eq(key), any(OrderDispatched.class));
+                .send(eq(DispatchService.ORDER_DISPATCH_TOPIC), eq(messageKey), any(OrderDispatched.class));
 
-        assertThatThrownBy(() -> service.process(key,testEvent))
+        assertThatThrownBy(() -> service.process(messageKey,testEvent))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("Order Dispatch Producer failure");
 
         verify(kafkaTemplateMock, times(1))
-                .send(eq(DispatchService.ORDER_DISPATCH_TOPIC), eq(key), any(OrderDispatched.class));
+                .send(eq(DispatchService.ORDER_DISPATCH_TOPIC), eq(messageKey), any(OrderDispatched.class));
 
         // Stop the execution after the first exception,
         // no further interaction with kafkaTemplateMock should occur
@@ -98,27 +95,23 @@ class DispatchServiceTest {
     void testProcess_DispatchPreparingProducerThrowsException() {
         OrderCreated testEvent = TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
 
-        // Generate a random key for the message
-        // This key can be used to correlate messages in Kafka
-        String key = randomUUID().toString();
-
         // Mock the sending of the OrderDispatched event
-        given(kafkaTemplateMock.send(eq(DispatchService.ORDER_DISPATCH_TOPIC), eq(key), any(OrderDispatched.class)))
+        given(kafkaTemplateMock.send(eq(DispatchService.ORDER_DISPATCH_TOPIC), eq(messageKey), any(OrderDispatched.class)))
                 .willReturn(mock(CompletableFuture.class));
 
         // refined the error message
         doThrow(new RuntimeException("Dispatch Tracking Producer failure")).when(kafkaTemplateMock)
-                .send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), eq(key), any(DispatchPreparing.class));
+                .send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), eq(messageKey), any(DispatchPreparing.class));
 
-        assertThatThrownBy(() -> service.process(key,testEvent))
+        assertThatThrownBy(() -> service.process(messageKey,testEvent))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("Dispatch Tracking Producer failure");
 
         // the 2 calls to kafkaTemplateMock should have been made
         verify(kafkaTemplateMock, times(1))
-                .send(eq(DispatchService.ORDER_DISPATCH_TOPIC), eq(key), any(OrderDispatched.class));
+                .send(eq(DispatchService.ORDER_DISPATCH_TOPIC), eq(messageKey), any(OrderDispatched.class));
 
         verify(kafkaTemplateMock, times(1))
-                .send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), eq(key), any(DispatchPreparing.class));
+                .send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), eq(messageKey), any(DispatchPreparing.class));
     }
 }
