@@ -2,6 +2,7 @@ package dev.lydtech.dispatch.service;
 
 import java.util.concurrent.CompletableFuture;
 
+import dev.lydtech.dispatch.event.DispatchCompleted;
 import dev.lydtech.dispatch.event.DispatchPreparing;
 import dev.lydtech.dispatch.event.OrderCreated;
 import dev.lydtech.dispatch.event.OrderDispatched;
@@ -43,10 +44,16 @@ class DispatchServiceTest {
         // Given
         
         // Mock the sending of the OrderDispatched event
-        given(kafkaTemplateMock.send(eq(DispatchService.ORDER_DISPATCH_TOPIC), anyString(), any(OrderDispatched.class))).willReturn(mock(CompletableFuture.class));
+        given(kafkaTemplateMock.send(eq(DispatchService.ORDER_DISPATCH_TOPIC), anyString(), any(OrderDispatched.class)))
+                .willReturn(mock(CompletableFuture.class));
 
         // Mock the sending of the DispatchPreparing event
-        given(kafkaTemplateMock.send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), anyString(), any(DispatchPreparing.class))).willReturn(mock(CompletableFuture.class));
+        given(kafkaTemplateMock.send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), anyString(), any(DispatchPreparing.class)))
+                .willReturn(mock(CompletableFuture.class));
+
+        // Mock the sending of the DispatchCompleted event
+        given(kafkaTemplateMock.send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), anyString(), any(DispatchCompleted.class)))
+                .willReturn(mock(CompletableFuture.class));
 
         OrderCreated orderCreatedEvent = TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
 
