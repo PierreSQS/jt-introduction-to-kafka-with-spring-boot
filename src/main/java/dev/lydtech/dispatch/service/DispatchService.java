@@ -1,5 +1,6 @@
 package dev.lydtech.dispatch.service;
 
+import dev.lydtech.dispatch.event.DispatchCompleted;
 import dev.lydtech.dispatch.event.DispatchPreparing;
 import dev.lydtech.dispatch.event.OrderCreated;
 import dev.lydtech.dispatch.event.OrderDispatched;
@@ -8,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Slf4j
@@ -40,16 +42,30 @@ public class DispatchService {
                 .orderId(payload.getOrderId())
                 .build();
 
+        // 1c. Create a DispatchCompleted event
+        DispatchCompleted dispatchCompleted = DispatchCompleted.builder()
+                .orderId(payload.getOrderId())
+                .dateCompleted(LocalDateTime.now().toString())
+                .build();
+
+
         // 2. Send the order dispatched event to the 'order.dispatched' topic in Kafka synchronously
         kafkaTemplate.send(ORDER_DISPATCH_TOPIC, key, orderDispatched).get();
 
         // 3. Log the dispatched order event
-        log.info("key {}, OrderDispatched: {} send", key, orderDispatched);
+        log.info("key {}, OrderDispatched: {} sent", key, orderDispatched);
 
         // 4. Send the dispatch preparing event to the 'dispatch.tracking' topic in Kafka synchronously
         kafkaTemplate.send(DISPATCH_TRACKING_TOPIC, key, dispatchPreparing).get();
 
         // 5. Log the dispatch preparing event
-        log.info("key {}, DispatchPreparing: {} send", key, dispatchPreparing);
+        log.info("key {}, DispatchPreparing: {} sent", key, dispatchPreparing);
+
+        // 6. Send the dispatch completed event to the 'dispatch.tracking' topic in Kafka synchronously
+        kafkaTemplate.send(DISPATCH_TRACKING_TOPIC, key, dispatchCompleted).get();
+
+        // 7. Log the dispatch completed event
+        log.info("key {}, DispatchCompleted: {} sent", key, dispatchCompleted);
+
     }
 }
