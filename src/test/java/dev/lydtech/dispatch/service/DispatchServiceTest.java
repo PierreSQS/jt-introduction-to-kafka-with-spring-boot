@@ -121,4 +121,42 @@ class DispatchServiceTest {
         verify(kafkaTemplateMock, times(1))
                 .send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), eq(messageKey), any(DispatchPreparing.class));
     }
+
+    @Test
+    void testProcess_DispatchCompletedProducerThrowsException() {
+        OrderCreated testEvent = TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
+
+        // Mock the sending of the OrderDispatched event
+        given(kafkaTemplateMock.send(eq(DispatchService.ORDER_DISPATCH_TOPIC), eq(messageKey), any(OrderDispatched.class)))
+                .willReturn(mock(CompletableFuture.class));
+
+        // Mock the sending of the DispatchPreparing event
+        given(kafkaTemplateMock.send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), eq(messageKey), any(DispatchPreparing.class)))
+                .willReturn(mock(CompletableFuture.class));
+
+
+        // refined the error message
+        doThrow(new RuntimeException("Dispatch Completed Producer failure")).when(kafkaTemplateMock)
+                .send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), eq(messageKey), any(DispatchCompleted.class));
+
+        assertThatThrownBy(() -> service.process(messageKey, testEvent))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Dispatch Completed Producer failure");
+
+        // the 3 calls to kafkaTemplateMock should have been made
+        verify(kafkaTemplateMock, times(1))
+                .send(eq(DispatchService.ORDER_DISPATCH_TOPIC), eq(messageKey), any(OrderDispatched.class));
+
+        verify(kafkaTemplateMock, times(1))
+                .send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), eq(messageKey), any(DispatchPreparing.class));
+
+        verify(kafkaTemplateMock, times(1))
+                .send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), eq(messageKey), any(DispatchCompleted.class));
+
+        // Stop the execution after the first exception,
+        // no further interaction with kafkaTemplateMock should occur
+        verifyNoMoreInteractions(kafkaTemplateMock);
+    }
+
+
 }
