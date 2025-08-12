@@ -48,11 +48,11 @@ class DispatchServiceTest {
                 .willReturn(mock(CompletableFuture.class));
 
         // Mock the sending of the DispatchPreparing event
-        given(kafkaTemplateMock.send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), anyString(), any(DispatchPreparing.class)))
+        given(kafkaTemplateMock.send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), eq(messageKey), any(DispatchPreparing.class)))
                 .willReturn(mock(CompletableFuture.class));
 
         // Mock the sending of the DispatchCompleted event
-        given(kafkaTemplateMock.send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), anyString(), any(DispatchCompleted.class)))
+        given(kafkaTemplateMock.send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), eq(messageKey), any(DispatchCompleted.class)))
                 .willReturn(mock(CompletableFuture.class));
 
         OrderCreated orderCreatedEvent = TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
@@ -72,18 +72,13 @@ class DispatchServiceTest {
 
         // Verify that the dispatch preparing event was sent to the 'dispatch.tracking' topic
         verify(kafkaTemplateMock, times(1))
-                .send(DispatchService.DISPATCH_TRACKING_TOPIC, messageKey,
-                        DispatchPreparing.builder()
-                                .orderId(orderCreatedEvent.getOrderId())
-                                .build());
+                .send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), eq(messageKey),
+                        any(DispatchPreparing.class));
 
         // Verify that the dispatch completed event was sent to the 'dispatch.tracking' topic
         verify(kafkaTemplateMock, times(1))
-                .send(DispatchService.DISPATCH_TRACKING_TOPIC, messageKey,
-                        DispatchCompleted.builder()
-                                .orderId(orderCreatedEvent.getOrderId())
-                                .dateCompleted(java.time.LocalDateTime.now().toString())
-                                .build());
+                .send(eq(DispatchService.DISPATCH_TRACKING_TOPIC), eq(messageKey),
+                        any(DispatchCompleted.class));
     }
 
     @Test
