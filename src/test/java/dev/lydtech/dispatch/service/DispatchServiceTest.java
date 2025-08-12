@@ -76,6 +76,14 @@ class DispatchServiceTest {
                         DispatchPreparing.builder()
                                 .orderId(orderCreatedEvent.getOrderId())
                                 .build());
+
+        // Verify that the dispatch completed event was sent to the 'dispatch.tracking' topic
+        verify(kafkaTemplateMock, times(1))
+                .send(DispatchService.DISPATCH_TRACKING_TOPIC, messageKey,
+                        DispatchCompleted.builder()
+                                .orderId(orderCreatedEvent.getOrderId())
+                                .dateCompleted(java.time.LocalDateTime.now().toString())
+                                .build());
     }
 
     @Test
