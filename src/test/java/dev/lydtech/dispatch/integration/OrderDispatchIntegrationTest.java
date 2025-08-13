@@ -28,6 +28,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -63,8 +64,14 @@ class OrderDispatchIntegrationTest {
         kafkaTestListener.dispatchedPreparingCounter.set(0);
         kafkaTestListener.dispatchCompletedCounter.set(0);
 
-        kafkaListenerEndpointRegistry.getListenerContainers().forEach(container ->
-                ContainerTestUtils.waitForAssignment(container, embeddedKafkaBroker.getPartitionsPerTopic()));
+        // Wait until the partitions are assigned.
+        // The application listener container has one topic and the test
+        // listener container has multiple topics,
+        // so take that into account when waiting for topic assignment.
+        kafkaListenerEndpointRegistry.getListenerContainers()
+                .forEach(container -> ContainerTestUtils.waitForAssignment(container,
+                        Objects.requireNonNull(container.getContainerProperties().getTopics()).length
+                                * embeddedKafkaBroker.getPartitionsPerTopic()));
     }
 
     @Test
