@@ -1,6 +1,7 @@
 package dev.lydtech.dispatch.integration;
 
 import dev.lydtech.dispatch.config.KafkaConfig;
+import dev.lydtech.dispatch.event.DispatchCompleted;
 import dev.lydtech.dispatch.event.DispatchPreparing;
 import dev.lydtech.dispatch.event.OrderCreated;
 import dev.lydtech.dispatch.event.OrderDispatched;
@@ -59,6 +60,7 @@ class OrderDispatchIntegrationTest {
     void setUp() {
         kafkaTestListener.orderDispatchedCounter.set(0);
         kafkaTestListener.dispatchedPreparingCounter.set(0);
+        kafkaTestListener.dispatchCompletedCounter.set(0);
 
         kafkaListenerEndpointRegistry.getListenerContainers().forEach(container ->
                 ContainerTestUtils.waitForAssignment(container, embeddedKafkaBroker.getPartitionsPerTopic()));
@@ -78,12 +80,17 @@ class OrderDispatchIntegrationTest {
         log.info("Sending OrderCreated event: {}", orderCreated);
         sendEventMessage(msgKey, orderCreated);
 
-        // Wait for the events to be processed
+        // Wait for the OrderDispatched event to be processed
         await().atMost(3, TimeUnit.SECONDS).pollDelay(100, TimeUnit.MILLISECONDS)
                 .until(kafkaTestListener.orderDispatchedCounter::get, equalTo(1));
 
+        // Wait for the DispatchPreparing event to be processed
         await().atMost(3, TimeUnit.SECONDS).pollDelay(100, TimeUnit.MILLISECONDS)
                 .until(() -> kafkaTestListener.dispatchedPreparingCounter.get(), count -> count == 1);
+
+        // Wait for the DispatchCompleted event to be processed
+        await().atMost(3, TimeUnit.SECONDS).pollDelay(100, TimeUnit.MILLISECONDS)
+                .until(() -> kafkaTestListener.dispatchCompletedCounter.get(), equalTo(1));
 
 
         log.info("Order Dispatch Integration Test completed successfully.");
@@ -144,12 +151,12 @@ class OrderDispatchIntegrationTest {
         // Kafka Listener to listen for DispatchCompleted events
         // This listener will be used to validate the DispatchCompleted event
         @KafkaListener(groupId = "KafkaIntegrationTest", topics = DispatchService.DISPATCH_TRACKING_TOPIC)
-        void onDispatchCompleted(@Header(KafkaHeaders.RECEIVED_KEY) String msgKey, final @Payload DispatchPreparing dispatchPreparing) {
-            log.info("Received key {} and DispatchCompleted event: {}", msgKey, dispatchPreparing);
+        void onDispatchCompleted(@Header(KafkaHeaders.RECEIVED_KEY) String msgKey, final @Payload DispatchCompleted dispatchCompleted) {
+            log.info("Received key {} and DispatchCompleted event: {}", msgKey, dispatchCompleted);
 
             // Validate the received message key and event
             assertThat(msgKey).isNotNull();
-            assertThat(dispatchPreparing).isNotNull();
+            assertThat(dispatchCompleted).isNotNull();
             dispatchCompletedCounter.incrementAndGet();
         }
     }
