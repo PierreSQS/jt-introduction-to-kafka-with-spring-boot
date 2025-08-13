@@ -115,6 +115,10 @@ class OrderDispatchIntegrationTest {
 
         AtomicInteger orderDispatchedCounter = new AtomicInteger(0);
 
+        AtomicInteger dispatchCompletedCounter = new AtomicInteger(0);
+
+        // Kafka Listener to listen for OrderDispatched events
+        // This listener will be used to validate the OrderDispatched event
         @KafkaListener(groupId = "KafkaIntegrationTest", topics = DispatchService.ORDER_DISPATCH_TOPIC)
         void onOrderDispatched(@Header(KafkaHeaders.RECEIVED_KEY) String msgKey,final @Payload OrderDispatched orderDispatched) {
             log.info("Received key {} and OrderDispatched event: {}", msgKey, orderDispatched);
@@ -125,6 +129,8 @@ class OrderDispatchIntegrationTest {
             orderDispatchedCounter.incrementAndGet();
         }
 
+        // Kafka Listener to listen for DispatchPreparing events
+        // This listener will be used to validate the DispatchPreparing event
         @KafkaListener(groupId = "KafkaIntegrationTest", topics = DispatchService.DISPATCH_TRACKING_TOPIC)
         void onDispatchPreparing(@Header(KafkaHeaders.RECEIVED_KEY) String msgKey, final @Payload DispatchPreparing dispatchPreparing) {
             log.info("Received key {} and DispatchPreparing event: {}", msgKey, dispatchPreparing);
@@ -133,6 +139,18 @@ class OrderDispatchIntegrationTest {
             assertThat(msgKey).isNotNull();
             assertThat(dispatchPreparing).isNotNull();
             dispatchedPreparingCounter.incrementAndGet();
+        }
+
+        // Kafka Listener to listen for DispatchCompleted events
+        // This listener will be used to validate the DispatchCompleted event
+        @KafkaListener(groupId = "KafkaIntegrationTest", topics = DispatchService.DISPATCH_TRACKING_TOPIC)
+        void onDispatchCompleted(@Header(KafkaHeaders.RECEIVED_KEY) String msgKey, final @Payload DispatchPreparing dispatchPreparing) {
+            log.info("Received key {} and DispatchCompleted event: {}", msgKey, dispatchPreparing);
+
+            // Validate the received message key and event
+            assertThat(msgKey).isNotNull();
+            assertThat(dispatchPreparing).isNotNull();
+            dispatchCompletedCounter.incrementAndGet();
         }
     }
 }
