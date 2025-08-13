@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.annotation.KafkaHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -116,6 +117,10 @@ class OrderDispatchIntegrationTest {
     }
 
     // Kafka Listener Container
+    // Kafka Listener to listen for OrderDispatched and DispatchPreparing events
+    // This listener will be used to validate the OrderDispatched and DispatchPreparing events
+    @KafkaListener(groupId = "KafkaIntegrationTest", topics = {DispatchService.DISPATCH_TRACKING_TOPIC,
+            DispatchService.ORDER_DISPATCH_TOPIC})
     public static class KafkaTestListener {
 
         AtomicInteger dispatchedPreparingCounter = new AtomicInteger(0);
@@ -126,7 +131,7 @@ class OrderDispatchIntegrationTest {
 
         // Kafka Listener to listen for OrderDispatched events
         // This listener will be used to validate the OrderDispatched event
-        @KafkaListener(groupId = "KafkaIntegrationTest", topics = DispatchService.ORDER_DISPATCH_TOPIC)
+        @KafkaHandler
         void onOrderDispatched(@Header(KafkaHeaders.RECEIVED_KEY) String msgKey,final @Payload OrderDispatched orderDispatched) {
             log.info("Received key {} and OrderDispatched event: {}", msgKey, orderDispatched);
 
@@ -136,9 +141,7 @@ class OrderDispatchIntegrationTest {
             orderDispatchedCounter.incrementAndGet();
         }
 
-        // Kafka Listener to listen for DispatchPreparing events
-        // This listener will be used to validate the DispatchPreparing event
-        @KafkaListener(groupId = "KafkaIntegrationTest", topics = DispatchService.DISPATCH_TRACKING_TOPIC)
+        @KafkaHandler
         void onDispatchPreparing(@Header(KafkaHeaders.RECEIVED_KEY) String msgKey, final @Payload DispatchPreparing dispatchPreparing) {
             log.info("Received key {} and DispatchPreparing event: {}", msgKey, dispatchPreparing);
 
@@ -150,7 +153,7 @@ class OrderDispatchIntegrationTest {
 
         // Kafka Listener to listen for DispatchCompleted events
         // This listener will be used to validate the DispatchCompleted event
-        @KafkaListener(groupId = "KafkaIntegrationTest", topics = DispatchService.DISPATCH_TRACKING_TOPIC)
+        @KafkaHandler
         void onDispatchCompleted(@Header(KafkaHeaders.RECEIVED_KEY) String msgKey, final @Payload DispatchCompleted dispatchCompleted) {
             log.info("Received key {} and DispatchCompleted event: {}", msgKey, dispatchCompleted);
 
